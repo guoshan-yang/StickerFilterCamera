@@ -1,3 +1,5 @@
+https://github.com/Skykai521/StickerCamera 这是原地址，我再次基础上做了修改
+
 # StickerCamera
 
 This is an Android application with camera,picture cropping,collage sticking and tagging.
@@ -82,3 +84,5 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ```
+
+
