@@ -20,7 +20,7 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
-            android:background="@color/white"
+            android:background="@color/crop__selector_focused"
             android:gravity="center_vertical"
             android:padding="10dp">
 
@@ -60,7 +60,8 @@
             android:layout_height="wrap_content"
             android:layout_above="@id/panel_take_photo"
             android:layout_centerVertical="true"
-            android:background="@color/white"
+            android:visibility="gone"
+            android:background="@color/transparent"
             android:orientation="horizontal"></LinearLayout>
 
 
@@ -87,7 +88,7 @@
                 android:layout_height="40dp"
                 android:layout_alignParentRight="true"
                 android:layout_marginRight="50dp"
-                android:textColor="@color/white"
+                android:textColor="@color/transparent"
                 android:checked="true"
                 android:text="网格"/>
 

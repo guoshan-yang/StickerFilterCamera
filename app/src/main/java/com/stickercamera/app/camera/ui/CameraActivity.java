@@ -17,6 +17,7 @@ import android.util.FloatMath;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -46,12 +47,16 @@ import com.stickercamera.app.camera.util.CameraHelper;
 import com.stickercamera.app.model.PhotoItem;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -69,9 +74,6 @@ public class CameraActivity extends CameraBaseActivity {
     private Camera.Parameters parameters = null;
     private Camera cameraInst = null;
     private Bundle bundle = null;
-    private int photoWidth = DistanceUtil.getCameraPhotoWidth();
-    private int photoNumber = 4;
-    private int photoMargin = App.getApp().dp2px(1);
     private float pointX, pointY;
     static final int FOCUS = 1;            // 聚焦
     static final int ZOOM = 2;            // 缩放
@@ -83,8 +85,6 @@ public class CameraActivity extends CameraBaseActivity {
 
     @InjectView(R.id.masking)
     CameraGrid cameraGrid;
-    @InjectView(R.id.photo_area)
-    LinearLayout photoArea;
     @InjectView(R.id.panel_take_photo)
     View takePhotoPanel;
     @InjectView(R.id.takepicture)
@@ -122,59 +122,11 @@ public class CameraActivity extends CameraBaseActivity {
         surfaceView.setBackgroundColor(TRIM_MEMORY_BACKGROUND);
         surfaceView.getHolder().addCallback(new SurfaceCallback());//为SurfaceView的句柄添加一个回调函数
 
-        //设置相机界面,照片列表,以及拍照布局的高度(保证相机预览为正方形)
-        ViewGroup.LayoutParams layout = cameraGrid.getLayoutParams();
-        layout.height = App.getApp().getScreenWidth();
-        layout = photoArea.getLayoutParams();
-        layout.height = DistanceUtil.getCameraPhotoAreaHeight();
-        layout = takePhotoPanel.getLayoutParams();
-        layout.height = App.getApp().getScreenHeight()
-                - App.getApp().getScreenWidth()
-                - DistanceUtil.getCameraPhotoAreaHeight();
-
-        //添加系统相册内的图片
-        ArrayList<PhotoItem> sysPhotos = FileUtils.getInst().findPicsInDir(
-                FileUtils.getInst().getSystemPhotoPath());
-        int showNumber = sysPhotos.size() > photoNumber ? photoNumber
-                : sysPhotos.size();
-        for (int i = 0; i < showNumber; i++) {
-            addPhoto(sysPhotos.get(showNumber - 1 - i));
-        }
-
         gridSwitch.setOnCheckedChangeListener((compoundButton, b) -> {
             if (b){
                 cameraGrid.setVisibility(View.VISIBLE);
             }else{
                 cameraGrid.setVisibility(View.INVISIBLE);
-            }
-        });
-    }
-
-    private void addPhoto(PhotoItem photoItem) {
-        ImageView photo = new ImageView(this);
-        if (StringUtils.isNotBlank(photoItem.getImageUri())) {
-            ImageLoaderUtils.displayLocalImage(photoItem.getImageUri(), photo, null);
-        } else {
-            photo.setImageResource(R.drawable.default_img);
-        }
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                photoWidth, photoWidth);
-        params.leftMargin = photoMargin;
-        params.rightMargin = photoMargin;
-        params.gravity = Gravity.CENTER;
-        photo.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        photo.setTag(photoItem.getImageUri());
-
-        if (photoArea.getChildCount() >= photoNumber) {
-            photoArea.removeViewAt(photoArea.getChildCount() - 1);
-            photoArea.addView(photo, 0, params);
-        } else {
-            photoArea.addView(photo, 0, params);
-        }
-        photo.setOnClickListener(v -> {
-            if (v instanceof ImageView && v.getTag() instanceof String) {
-                CameraManager.getInst().processPhotoItem(CameraActivity.this,
-                        new PhotoItem((String) v.getTag(), System.currentTimeMillis()));
             }
         });
     }
@@ -726,14 +678,14 @@ public class CameraActivity extends CameraBaseActivity {
         PHOTO_SIZE = options.outHeight > options.outWidth ? options.outWidth : options.outHeight;
         int height = options.outHeight > options.outWidth ? options.outHeight : options.outWidth;
         options.inJustDecodeBounds = false;
-        Rect r;
-        if (mCurrentCameraId == 1) {
-            r = new Rect(height - PHOTO_SIZE, 0, height, PHOTO_SIZE);
-        } else {
-            r = new Rect(0, 0, PHOTO_SIZE, PHOTO_SIZE);
-        }
+        Rect r = new Rect(0,0,options.outWidth, options.outHeight);
+//        if (mCurrentCameraId == 1) {
+//            r = new Rect(height - PHOTO_SIZE, 0, height, PHOTO_SIZE);
+//        } else {
+//            r = new Rect(0, 0, PHOTO_SIZE, PHOTO_SIZE);
+//        }
         try {
-            croppedImage = decodeRegionCrop(data, r);
+            croppedImage = decodeRegionCrop(data, r,options.outWidth,options.outHeight);
         } catch (Exception e) {
             return null;
         }
@@ -743,7 +695,7 @@ public class CameraActivity extends CameraBaseActivity {
         return imagePath;
     }
 
-    private Bitmap decodeRegionCrop(byte[] data, Rect rect) {
+    private Bitmap decodeRegionCrop(byte[] data, Rect rect,int outW,int outH) {
 
         InputStream is = null;
         System.gc();
@@ -762,11 +714,11 @@ public class CameraActivity extends CameraBaseActivity {
             IOUtil.closeStream(is);
         }
         Matrix m = new Matrix();
-        m.setRotate(90, PHOTO_SIZE / 2, PHOTO_SIZE / 2);
+        m.setRotate(90);
         if (mCurrentCameraId == 1) {
             m.postScale(1, -1);
         }
-        Bitmap rotatedImage = Bitmap.createBitmap(croppedImage, 0, 0, PHOTO_SIZE, PHOTO_SIZE, m, true);
+        Bitmap rotatedImage = Bitmap.createBitmap(croppedImage, 0, 0, outW, outH, m, true);
         if (rotatedImage != croppedImage)
             croppedImage.recycle();
         return rotatedImage;

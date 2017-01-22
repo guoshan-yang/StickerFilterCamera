@@ -43,10 +43,17 @@ public class CameraGrid extends View {
             topBannerWidth = height - width;
         }
         if (showGrid) {
+            //画竖线
             canvas.drawLine(width / 3, 0, width / 3, height, mPaint);
-            canvas.drawLine(width * 2 / 3, 0, width * 2 / 3, height, mPaint);
-            canvas.drawLine(0, height / 3, width, height / 3, mPaint);
-            canvas.drawLine(0, height * 2 / 3, width, height * 2 / 3, mPaint);
+            canvas.drawLine(width / 3 * 2, 0, width / 3 * 2, height, mPaint);
+
+            //画横线，方格
+            canvas.drawLine(0, width / 3, width, width / 3, mPaint);
+            canvas.drawLine(0, width / 3 * 2, width, width / 3 * 2, mPaint);
+            canvas.drawLine(0, width, width, width, mPaint);
+            canvas.drawLine(0, width / 3 * 4, width, width / 3 * 4, mPaint);
+            canvas.drawLine(0, width / 3 * 5, width, width / 3 * 5, mPaint);
+            canvas.drawLine(0, width / 3 * 6, width, width / 3 * 6, mPaint);
         }
     }
 
